@@ -111,7 +111,7 @@ def main():
     gen_test = ImageDataGenerator()
     gs = GetSets(48, '../FatigueDetection/eye_dataset/', 'test_set', 'train_set', 128)
     train_set = gs.get_set(gen_train, gs.train_path, 'grayscale', 'categorical', True)
-    test_set = gs.get_set(gen_train, gs.test_path, 'grayscale', 'categorical', False)
+    test_set = gs.get_set(gen_test, gs.test_path, 'grayscale', 'categorical', False)
 
     fcnn = FatigueCNN()
     model = fcnn.build()
