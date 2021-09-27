@@ -17,7 +17,7 @@ def label_img(img, original_path, target_path_open, target_path_closed):
 def main():
     # training data
     #
-    original_path_train = '../FatigueDetection/eye_dataset/Train_Data'
+    original_path_train = '../FatigueDetection/eye_dataset/Train_Data/'
     train_target_path_open = '../FatigueDetection/eye_dataset/train_set/open/'
     train_target_path_closed = '../FatigueDetection/eye_dataset/train_set/closed/'
 
@@ -26,7 +26,7 @@ def main():
 
     # testing data
     #
-    original_path_test = '../FatigueDetection/eye_dataset/Test_Data'
+    original_path_test = '../FatigueDetection/eye_dataset/Test_Data/'
     test_target_path_open = '../FatigueDetection/eye_dataset/test_set/open/'
     test_target_path_closed = '../FatigueDetection/eye_dataset/test_set/closed/'
 
