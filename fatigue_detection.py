@@ -2,16 +2,25 @@ import cv2
 from keras.backend import _preprocess_conv2d_input
 from keras.models import load_model
 import numpy as np
+from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
+
 
 # load the classifiers for face and eyes
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-# eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-eye_classifier = load_model('F:/Personal/Coding/Projects/FatigueDetection/output/model.h5')
+eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+eye_classifier = load_model('./output/model.h5')
 lefteye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_lefteye_2splits.xml')
 righteye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_righteye_2splits.xml')
 
 eye_label = ['open', 'closed']
+
+# img = load_img('./eye_dataset/test_set/closed/s0001_00001_0_0_0_0_0_01.png', target_size=(224,224))
+# img = (img_to_array(img).astype('float')/255.0)[:,:,:1]
+# img = np.expand_dims(img ,axis=0)
+# prediction = eye_classifier.predict(img)
+# print(prediction[0][0])
+
 
 # get webcam capture and set size
 cap = cv2.VideoCapture(0)
@@ -21,6 +30,8 @@ cap.set(4, 480) # set height of window
 # check if webcam opened
 if not cap.isOpened():
     raise IOError('Webcam did not open correctly.\nAborting...')
+
+
 
 # open the windows with webcam feed
 while True:
@@ -63,7 +74,7 @@ while True:
             minNeighbors=15, # specifies how many neighbours each rectangle should have. Increase this to reduce false positives
             minSize=(5, 5) # minimum rectangle size to be considered eyes
         )
-        
+        '''
         # mark detected eyes
         for (ex, ey, ew, eh) in left_eye:
             cv2.rectangle(roi_colour, (ex, ey), (ex+ew, ey+eh), (0, 0, 255), 2)
@@ -77,34 +88,36 @@ while True:
                 roi = roi_gray_left.astype('float')/255.0
                 roi = img_to_array(roi)
                 roi = np.expand_dims(roi, axis=0)
+                print(roi.shape)
                 prediction = eye_classifier.predict(roi)
-                # print(prediction)
+                #print(prediction)
                 label = eye_label[prediction.argmax()]
                 label_position = (x, y-10)
                 cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
             else:
                 cv2.putText(frame, 'No Eyes', (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            
-            # for (ex, ey, ew, eh) in right_eye:
-            #     cv2.rectangle(roi_colour, (ex, ey), (ex+ew, ey+eh), (0, 0, 255), 2)
-            #     roi_gray_right = roi_gray_right[ey:ey+eh, ex:ex+ew]
-            #     try:
-            #         roi_gray_right = cv2.resize(roi_gray_right, (48,48), interpolation=cv2.INTER_AREA)
-            #     except:
-            #         continue
-                
-            #     if np.sum([roi_gray_right]) != 0:
-            #         roi = roi_gray_right.astype('float')/255.0
-            #         roi = img_to_array(roi)
-            #         roi = np.expand_dims(roi, axis=0)
-            #         prediction = eye_classifier.predict(roi)
-            #         print(prediction)
-            #         label = eye_label[prediction.argmax()]
-            #         label_position = (x, y-10)
-            #         cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            #     else:
-            #         cv2.putText(frame, 'No Eyes', (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-    
+        '''
+        for (ex, ey, ew, eh) in right_eye:
+            cv2.rectangle(roi_colour, (ex, ey), (ex+ew, ey+eh), (0, 0, 255), 2)
+            roi_gray_right = roi_gray_right[ey:ey+eh, ex:ex+ew]
+            try:
+              roi_gray_right = cv2.resize(roi_gray_right, (224,224), interpolation=cv2.INTER_AREA)
+            except:
+               continue
+
+            if np.sum([roi_gray_right]) != 0:
+                roi = roi_gray_right.astype('float')/255.0
+                roi = img_to_array(roi)
+                roi = np.expand_dims(roi, axis=0)
+
+                prediction = eye_classifier.predict(roi)[0][0]
+                label = eye_label[prediction < 0.5] + ' ' + str(prediction)
+                label_position = (x, y-10)
+                cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            else:
+              cv2.putText(frame, 'No Eyes', (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+
     # show the frame
     cv2.imshow('Eyes', frame) # open window
     try:
