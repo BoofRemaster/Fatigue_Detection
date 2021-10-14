@@ -5,6 +5,7 @@ from keras.models import load_model
 import numpy as np
 from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
+import fatigue_cnn as cnn
 
 # load the classifiers for face and eyes
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -133,7 +134,7 @@ while True:
             cv2.rectangle(roi_colour, (ex, ey), (ex + ew, ey + eh), (0, 0, 255), 2)
             roi_gray_right = roi_gray_right[ey:ey + eh, ex:ex + ew]
             try:
-                roi_gray_right = cv2.resize(roi_gray_right, (224, 224), interpolation=cv2.INTER_AREA)
+                roi_gray_right = cv2.resize(roi_gray_right, (cnn.img_size, cnn.img_size), interpolation=cv2.INTER_AREA)
             except:
                 continue
 
