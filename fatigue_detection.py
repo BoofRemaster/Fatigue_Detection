@@ -20,6 +20,10 @@ fatigue_check_interval = 3.0  # in seconds
 
 prev_time_recording = datetime.now()
 
+left_eye_col = (255, 0, 0)
+right_eye_col = (0, 0, 255)
+
+
 closed_last_interval = False
 
 min_observations_count = 5
@@ -56,14 +60,54 @@ def check_fatigue():
         closed_last_interval = met_half_threshold
 
 
+def handle_eye_status(eye, roi_side, label_text = "", flip = False, offset = -10, col = right_eye_col):
+    global closed_observations_count
+    global open_observations_count
+    for (ex, ey, ew, eh) in eye:
+        # If eye ROI is on wrong side of face, disregard it
+        if flip:
+            if ex < w / 2:
+                continue
+        else:
+            if ex > w / 2:
+                continue
+        cv2.rectangle(roi_colour, (ex, ey), (ex + ew, ey + eh), col, 2)
+        roi_side = roi_side[ey:ey + eh, ex:ex + ew]
+        try:
+            roi_side = cv2.resize(roi_side, (cnn.img_size, cnn.img_size), interpolation=cv2.INTER_AREA)
+        except:
+            continue
+
+        if np.sum([roi_side]) != 0:
+            roi = roi_side.astype('float') / 255.0
+            if flip:
+                roi = cv2.flip(roi, 1)
+            roi = img_to_array(roi)
+            roi = np.expand_dims(roi, axis=0)
+
+            prediction = eye_classifier.predict(roi)[0][0]
+            eye_status = eye_label[prediction < 0.5]
+            label = label_text + " " + eye_status + ' ' + str(prediction)
+
+            if eye_status == 'open':
+                open_observations_count += 1
+            else:
+                closed_observations_count += 1
+
+            label_position = (x, y + offset)
+            cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, col, 2)
+
+
 # get webcam capture and set size
 cap = cv2.VideoCapture(0)
 cap.set(3, 640)  # set width of window
 cap.set(4, 480)  # set height of window
 
+
 # check if webcam opened
 if not cap.isOpened():
     raise IOError('Webcam did not open correctly.\nAborting...')
+
 
 # open the windows with webcam feed
 while True:
@@ -103,63 +147,8 @@ while True:
             minSize=(5, 5)  # minimum rectangle size to be considered eyes
         )
 
-
-        # mark detected eyes
-        for (ex, ey, ew, eh) in left_eye:
-            if ex < w/2:
-                continue
-            cv2.rectangle(roi_colour, (ex, ey), (ex+ew, ey+eh), (255, 0, 0), 2)
-            roi_gray_left = roi_gray_left[ey:ey+eh, ex:ex+ew]
-            try:
-                roi_gray_left = cv2.resize(roi_gray_left, (cnn.img_size,cnn.img_size), interpolation=cv2.INTER_AREA)
-            except:
-                continue
-
-            if np.sum([roi_gray_left]) != 0:
-                roi = roi_gray_left.astype('float')/255.0
-                roi = cv2.flip(roi, 1)
-                roi = img_to_array(roi)
-                roi = np.expand_dims(roi, axis=0)
-
-                prediction = eye_classifier.predict(roi)[0][0]
-                eye_status = eye_label[prediction < 0.5]
-                label = 'Left Eye: ' + eye_status + ' ' + str(prediction)
-                label_position = (x, y-40)
-                cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-            else:
-                cv2.putText(frame, 'No Left Eye', label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-
-
-        for (ex, ey, ew, eh) in right_eye:
-            # check if the eye is actually on the right side of the face
-            if ex > w/2:
-                continue
-            cv2.rectangle(roi_colour, (ex, ey), (ex + ew, ey + eh), (0, 0, 255), 2)
-            roi_gray_right = roi_gray_right[ey:ey + eh, ex:ex + ew]
-            try:
-                roi_gray_right = cv2.resize(roi_gray_right, (cnn.img_size, cnn.img_size), interpolation=cv2.INTER_AREA)
-            except:
-                continue
-
-            if np.sum([roi_gray_right]) != 0:
-                roi = roi_gray_right.astype('float') / 255.0
-                roi = img_to_array(roi)
-                roi = np.expand_dims(roi, axis=0)
-
-                prediction = eye_classifier.predict(roi)[0][0]
-                eye_status = eye_label[prediction < 0.5]
-                label = 'Right Eye: ' + eye_status + ' ' + str(prediction)
-
-                if eye_status == 'open':
-                    open_observations_count += 1
-                else:
-                    closed_observations_count += 1
-
-                label_position = (x, y - 10)
-                cv2.putText(frame, label, label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            else:
-                cv2.putText(frame, 'No Right Eye', label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        handle_eye_status(left_eye, roi_gray_left, "Left Eye:", True, -40, left_eye_col)
+        handle_eye_status(right_eye, roi_gray_right, "Right Eye:", False, -10, right_eye_col)
 
     cur_time = datetime.now()
     time_diff = (cur_time - prev_time_recording).total_seconds()
@@ -169,12 +158,6 @@ while True:
 
         # show the frame
     cv2.imshow('Eyes', frame)  # open window
-    try:
-        cv2.imshow('Right Eye', roi_gray_right)
-        cv2.imshow('Left Eye', roi_gray_left)
-    except:
-        continue
-    # cv2.imshow('Your Face in Gray Scale', gray) # open window with gray scale applied
 
     # press 'ESC' key to terminate the program
     k = cv2.waitKey(30) & 0xff
