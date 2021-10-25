@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 
-img_size = 224  # x/y dimensions to resize images to
+img_size = 48  # x/y dimensions to resize images to
 batch_size = 64  # batch size for feeding CNN
 num_epochs = 10
 num_train_steps = 30  # train steps per epoch
@@ -36,20 +36,9 @@ def generate_model():
     # add first downsampling layer
     model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='valid'))
 
-    # add second spatial convolution layer
-    model.add(Conv2D(filters=256, kernel_size=(11, 11), strides=(1, 1), padding='valid', activation='relu'))
-    # add second downsampling layer
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='valid'))
-
-    # add third spatial convolution layer
-    model.add(Conv2D(filters=384, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu'))
-
-    # add fourth spatial convolution layer
-    model.add(Conv2D(filters=384, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu'))
-
-    # add final spatial convolution layer
+    # add second and final spatial convolution layer
     model.add(Conv2D(filters=256, kernel_size=(3, 3), strides=(1, 1), padding='valid', activation='relu'))
-    # add final downsampling layer
+    # add second and final downsampling layer
     model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding='valid'))
 
     # add flatten layer
@@ -72,10 +61,10 @@ def generate_model():
 
     # fit the model to training data set and evaluate progressively with validation data set
     model.fit_generator(train_generator,
-                        steps_per_epoch=num_train_steps,
+                        #steps_per_epoch=num_train_steps,
                         epochs=num_epochs,
-                        validation_data=validation_generator,
-                        validation_steps=num_val_steps)
+                        validation_data=validation_generator)#,
+                        #validation_steps=num_val_steps)
 
     # return the fitted model
     return model
