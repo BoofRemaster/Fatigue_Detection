@@ -4,10 +4,11 @@ from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
 from keras import metrics
+import numpy as np
 
 img_size = 48  # x/y dimensions to resize images to
 batch_size = 64  # batch size for feeding CNN
-num_epochs = 100
+num_epochs = 1
 num_train_steps = 30  # train steps per epoch
 num_val_steps = 30  # validation steps per epoch
 train_data_dir = "./eye_dataset/train_set"
@@ -60,16 +61,24 @@ def generate_model():
     # compile model with adam optimizer using binary crossentropy for loss function
     model.compile(optimizer=adam_v2.Adam(0.001), loss='binary_crossentropy', metrics=[metrics.BinaryAccuracy(), metrics.Recall(), metrics.AUC()])
 
-
     # fit the model to training data set and evaluate progressively with validation data set
-    model.fit_generator(train_generator,
+    history = model.fit_generator(train_generator,
+                        steps_per_epoch=num_train_steps,
                         epochs=num_epochs,
-                        validation_data=validation_generator)
+                        validation_data=validation_generator,
+                        validation_steps=num_val_steps)
 
+    np.save('model_history.npy', history.history)
 
     # return the fitted model
     return model
 
 
+def load_model():
+    history = np.load('model_history.npy', allow_pickle=True).item()
+    print(history)
+
+
 if __name__ == "__main__":
     generate_model().save("./output/model.h5")
+    load_model()
