@@ -60,7 +60,7 @@ def check_fatigue():
         closed_last_interval = met_half_threshold
 
 
-def handle_eye_status(eye, roi_side, label_text = "", flip = False, offset = -10, col = right_eye_col):
+def handle_eye_status(eye, roi_side, label_text="", flip=False, offset=-10, col=right_eye_col):
     global closed_observations_count
     global open_observations_count
     for (ex, ey, ew, eh) in eye:

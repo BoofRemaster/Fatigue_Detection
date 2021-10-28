@@ -3,10 +3,11 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import Conv2D, MaxPooling2D
+from keras import metrics
 
 img_size = 48  # x/y dimensions to resize images to
 batch_size = 64  # batch size for feeding CNN
-num_epochs = 10
+num_epochs = 100
 num_train_steps = 30  # train steps per epoch
 num_val_steps = 30  # validation steps per epoch
 train_data_dir = "./eye_dataset/train_set"
@@ -14,7 +15,7 @@ validation_data_dir = "./eye_dataset/test_set"
 
 
 def generate_model():
-    # setup training and validation image streams
+    # setup training and validation image streams and sets
     train_gen = ImageDataGenerator(rescale=1. / 255)
     validation_gen = ImageDataGenerator(rescale=1. / 255)
     train_generator = train_gen.flow_from_directory(train_data_dir,
@@ -57,14 +58,14 @@ def generate_model():
     model.add(Dense(1, activation='sigmoid'))
 
     # compile model with adam optimizer using binary crossentropy for loss function
-    model.compile(optimizer=adam_v2.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=adam_v2.Adam(0.001), loss='binary_crossentropy', metrics=[metrics.BinaryAccuracy(), metrics.Recall(), metrics.AUC()])
+
 
     # fit the model to training data set and evaluate progressively with validation data set
     model.fit_generator(train_generator,
-                        #steps_per_epoch=num_train_steps,
                         epochs=num_epochs,
-                        validation_data=validation_generator)#,
-                        #validation_steps=num_val_steps)
+                        validation_data=validation_generator)
+
 
     # return the fitted model
     return model
